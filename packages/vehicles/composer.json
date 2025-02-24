@@ -1,0 +1,26 @@
+{
+  "name": "youbraj/vehicle",
+  "description": "A package for Laravel PHP Framework to add a roles and permission for the vehicle.",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Youbraj Rai",
+      "email": "youbrajrai79@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Vehicle\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Vehicle\\VehicleServiceProvider"
+      ],
+      "middlewares": [
+        "Vehicle\\Middleware\\AuthGates"
+      ]
+    }
+  }
+}

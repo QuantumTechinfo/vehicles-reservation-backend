@@ -1,0 +1,27 @@
+{
+  "name": "youbraj/users",
+  "description": "A package for Laravel PHP Framework to add a roles and permission for the users.",
+  "type": "library",
+  "authors": [
+    {
+      "name": "Youbraj Rai",
+      "email": "youbrajrai79@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/",
+      "User\\": "packages/users/src"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "User\\UserServiceProvider"
+      ],
+      "middlewares": [
+        "User\\Middleware\\AuthGates"
+      ]
+    }
+  }
+}

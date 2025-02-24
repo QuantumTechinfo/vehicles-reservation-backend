@@ -1,0 +1,26 @@
+{
+    "name": "youbraj/reservations",
+    "description": "A package for Laravel PHP Framework to add a roles and permission for the Reservations.",
+    "type": "library",
+    "authors": [
+      {
+        "name": "Youbraj Rai",
+        "email": "youbrajrai79@gmail.com"
+      }
+    ],
+    "autoload": {
+        "psr-4": {
+          "Reservation\\": "src/"
+        }
+      },
+      "extra": {
+        "laravel": {
+          "providers": [
+            "Reservation\\ReservationServiceProvider"
+          ],
+          "middlewares":[
+            "Reservation\\Middleware\\AuthGates"
+          ]
+        }
+      }
+}
