@@ -1,13 +1,11 @@
-@extends('Layouts.Sidebar_Layouts')
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Users') }}
+        </h2>
+    </x-slot>
 
-
-@section('content')
-    <style>
-        .table-components{
-            margin-left: 250px;
-            margin-right: 50px;
-        }
-    </style>
+    
     <section class="table-components">
         <div class="container-fluid m-4">
             <div class="row">
@@ -82,4 +80,4 @@
         <!-- end container -->
     </section>
 
-@endsection
+</x-app-layout>

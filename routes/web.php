@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use User\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,15 +15,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Route::get('/', function () {
+//     return view('welcome');
+// });
 
-Route::get('/signup', function () {
-    return view('pages.Registration.signup');
+Route::get('/dashboard', function () {
+    dd(auth()->user());
+    return view(view: 'dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/users', [UserController::class, 'index'])->middleware('auth')->name('users');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/signin', function () {
-    return view('pages.Registration.signin');
-});
-
-Route::get('/users', function () {
-    return view('pages.Users.users');
-});
+require __DIR__ . '/auth.php';

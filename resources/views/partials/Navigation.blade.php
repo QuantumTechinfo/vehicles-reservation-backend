@@ -29,7 +29,7 @@
                                     </div>
                                     <div class="content">
                                         <h4 class="text-sm">Adam Joe</h4>
-                                        <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs"
+                                        <a class="text-black/40 hover:text-black text-xs"
                                             href="#">Email@gmail.com</a>
                                     </div>
                                 </div>
