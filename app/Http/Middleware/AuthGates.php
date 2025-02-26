@@ -39,9 +39,10 @@ class AuthGates
             if (!$user) {
                 Log::info('No authenticated user detected');
                 return $next($request);
+                // return redirect()->route('/');
             }
 
-            if($user){
+            if ($user) {
                 return response()->json([
                     'message' => 'Vehicle created successfully',
                     'data' => $user

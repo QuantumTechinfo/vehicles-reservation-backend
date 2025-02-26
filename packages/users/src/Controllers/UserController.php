@@ -24,7 +24,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        abort_if(Gate::denies('user_access'), response()->json(['error' => 'Unauthorized.'], 403));
+        abort_if(auth()->user()->role !== 'admin', response()->json(['error' => 'Unauthorized.'], 403));
 
         $query = User::query();
 

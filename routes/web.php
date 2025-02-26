@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use User\Controllers\UserController;
+use App\Http\Controllers\UsersController as UserController;
+use App\Http\Controllers\VehicleController as VehicleController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -15,16 +17,25 @@ use User\Controllers\UserController;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// });
+Route::get('/', function () {
+    return view('welcome');
+});
 
 Route::get('/dashboard', function () {
     dd(auth()->user());
     return view(view: 'dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Admin panel user controller
 Route::get('/users', [UserController::class, 'index'])->middleware('auth')->name('users');
+Route::delete('/users/{user}', [UserController::class, 'destroy'])
+    ->middleware('auth')
+    ->name('users.destroy');
+
+// Vehicle Controller
+Route::get('/vehicles', [VehicleController::class, 'index'])->middleware('auth')->name('vehicles');
+
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

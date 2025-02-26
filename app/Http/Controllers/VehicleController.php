@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use app\Models\User;
+use Vehicle\Models\Vehicle;
 
-class UsersController extends Controller
+
+
+class VehicleController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -17,10 +19,13 @@ class UsersController extends Controller
         abort_if(auth()->user()->role !== 'admin', response()->json(['error' => 'Unauthorized.'], 403));
 
         // Use pagination so the built-in links in the view work.
-        $users = User::paginate(10);
+        $vehicles = Vehicle::paginate(10);
 
-        // Pass the users collection to the view.
-        return view('pages.Users.users', compact('users'));
+        // Remove debugging dd() for production.
+        // dd($vehicles);
+
+        // Pass the vehicles collection to the view.
+        return view('pages.Vehicles.Vehicles', compact('vehicles'));
     }
 
 
@@ -69,18 +74,6 @@ class UsersController extends Controller
      */
     public function destroy(string $id)
     {
-        abort_if(auth()->user()->role !== 'admin', response()->json(['error' => 'Unauthorized.'], 403));
-
-        $user = User::findOrFail($id);
-
-        if ($user->id === auth()->user()->id) {
-            return redirect()->back()->with('error', 'You cannot delete your own account.');
-        }
-
-        $user->delete();
-
-        // Redirect back with a success message.
-        return redirect()->route('users')->with('success', 'User deleted successfully.');
+        //
     }
-
 }
