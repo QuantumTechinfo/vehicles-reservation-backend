@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use User\Models\Role;
+use Vehicle\Models\Vehicle;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -31,6 +32,10 @@ class User extends Authenticatable implements JWTSubject
         'fcm_token'
     ];
 
+    public function vehicles()
+    {
+        return $this->hasMany(Vehicle::class, 'uploader_id');
+    }
     /**
      * The attributes that should be hidden for serialization.
      *

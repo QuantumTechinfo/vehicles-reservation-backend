@@ -19,7 +19,7 @@ class VehicleController extends Controller
         abort_if(auth()->user()->role !== 'admin', response()->json(['error' => 'Unauthorized.'], 403));
 
         // Use pagination so the built-in links in the view work.
-        $vehicles = Vehicle::paginate(10);
+        $vehicles = Vehicle::with('uploader')->paginate(10);
 
         // Remove debugging dd() for production.
         // dd($vehicles);

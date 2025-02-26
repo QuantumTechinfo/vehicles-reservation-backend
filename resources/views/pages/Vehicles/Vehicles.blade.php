@@ -16,7 +16,10 @@
                                 <thead>
                                     <tr>
                                         <th>
-                                            <h6>Uploader</h6>
+                                            <h6>Uploader Name</h6>
+                                        </th>
+                                        <th>
+                                            <h6>Uploader Email</h6>
                                         </th>
                                         <th>
                                             <h6>Vehicle Name</h6>
@@ -45,8 +48,12 @@
                                     @foreach($vehicles as $vehicle)
                                         <tr>
                                             <td class="min-width">
-                                                <p> Uploader_Name </p>
+                                                <p> {{ optional($vehicle->uploader)->name }} </p>
                                             </td>
+                                            <td>
+                                                <p> {{ optional($vehicle->uploader)->email }} </p>
+                                            </td>
+
                                             <td class="min-width">
                                                 <p>{{ $vehicle->vehicle_name }}</p>
                                             </td>

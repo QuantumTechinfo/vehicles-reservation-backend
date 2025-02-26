@@ -60,6 +60,7 @@
                                             <td class="min-width">
                                                 <p>{{ $user->phone_no }}</p>
                                             </td>
+
                                             <td class="min-width">
                                                 @if($user->is_verified)
                                                     <span class="status-btn success-btn">Verified</span>
@@ -67,11 +68,12 @@
                                                     <span class="status-btn danger-btn">Not Verified</span>
                                                 @endif
                                             </td>
+                                            
                                             <td>
                                                 <div class="d-flex ">
                                                     <!-- Example action buttons with JS functions (you can modify these as needed) -->
                                                     <!-- Button trigger modal -->
-                                                    <button type="button" class="btn btn-primary" >
+                                                    <button type="button" class="btn btn-primary">
                                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                                                             fill="currentColor" class="size-5">
                                                             <path
