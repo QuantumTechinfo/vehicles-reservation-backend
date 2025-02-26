@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReservationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsersController as UserController;
 use App\Http\Controllers\VehicleController as VehicleController;
@@ -35,6 +36,7 @@ Route::delete('/users/{user}', [UserController::class, 'destroy'])
 // Vehicle Controller
 Route::get('/vehicles', [VehicleController::class, 'index'])->middleware('auth')->name('vehicles');
 
+Route::get('/reservations', [ReservationController::class, 'index'])->middleware('auth')->name('reservations');
 
 
 Route::middleware('auth')->group(function () {

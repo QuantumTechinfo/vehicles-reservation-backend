@@ -5,6 +5,7 @@ namespace Reservation\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Reservation\Models\ReservationHistory;
+use User;
 
 class Reservation extends Model
 {
@@ -23,11 +24,17 @@ class Reservation extends Model
         'client_phone',
         'client_email',
         'description',
+        'busID',
         'status'
     ];
     public function history()
     {
         return $this->hasOne(ReservationHistory::class);
+    }
+
+    public function ReservationBelogsTo()
+    {
+        return $this->belongsTo(User::class, foreignKey: 'vehicle_id');
     }
 }
 
