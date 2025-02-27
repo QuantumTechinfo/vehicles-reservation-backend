@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsersController as UserController;
 use App\Http\Controllers\VehicleController as VehicleController;
 
+// models
+use App\Models\User;
+use Reservation\Models\Reservation;
+use Vehicle\Models\Vehicle;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,8 +27,13 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    dd(auth()->user());
-    return view(view: 'dashboard');
+    $counts = [
+        'users' => User::count(),
+        'reservations' => Reservation::count(),
+        'vehicles' => Vehicle::count()
+    ];
+
+    return view('dashboard', compact('counts'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Admin panel user controller
