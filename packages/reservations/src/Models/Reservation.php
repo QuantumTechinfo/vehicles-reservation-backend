@@ -31,10 +31,5 @@ class Reservation extends Model
     {
         return $this->hasOne(ReservationHistory::class);
     }
-
-    public function ReservationBelogsTo()
-    {
-        return $this->belongsTo(User::class, foreignKey: 'vehicle_id');
-    }
 }
 

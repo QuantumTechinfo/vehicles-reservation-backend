@@ -36,8 +36,11 @@ Route::delete('/users/{user}', [UserController::class, 'destroy'])
 // Vehicle Controller
 Route::get('/vehicles', [VehicleController::class, 'index'])->middleware('auth')->name('vehicles');
 
+// Tick if Reservation 
 Route::get('/reservations', [ReservationController::class, 'index'])->middleware('auth')->name('reservations');
-
+Route::put('/reservation/{id}', [ReservationController::class, 'update'])
+    ->middleware('auth')
+    ->name('reservation.update');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

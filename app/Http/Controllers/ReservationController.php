@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Reservation\Models\Reservation;
-
+use Validator;
+use RequireLoader;
 
 class ReservationController extends Controller
 {
@@ -15,15 +16,16 @@ class ReservationController extends Controller
     public function index()
     {
         $reservations = Reservation::paginate(10);
-        return view("pages.Reservation.Reservatoin", compact("reservations"));
+        return view("pages.Reservation.Reservation", compact("reservations"));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create($request)
     {
-        //
+
+
     }
 
     /**
@@ -31,7 +33,7 @@ class ReservationController extends Controller
      */
     public function store(Request $request)
     {
-        //
+
     }
 
     /**
@@ -55,7 +57,20 @@ class ReservationController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // // Validate the input
+        $request->validate([
+            'status' => 'required|in:pending,approved,rejected',
+        ]);
+
+        // Find the reservation
+        $reservation = Reservation::findOrFail($id);
+        
+        // Update the status
+        $reservation->update(['status' => $request->status]);
+
+        // Redirect with success message
+        // return RequireLoader::success('');
+        return redirect()->back()->with('success', 'Reservation status updated successfully.');
     }
 
     /**

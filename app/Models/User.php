@@ -32,10 +32,6 @@ class User extends Authenticatable implements JWTSubject
         'fcm_token'
     ];
 
-    public function vehicles()
-    {
-        return $this->hasMany(Vehicle::class, 'uploader_id');
-    }
     /**
      * The attributes that should be hidden for serialization.
      *

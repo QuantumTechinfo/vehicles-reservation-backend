@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Auth;
+use Carbon\Carbon;
 
 class ReservationController extends Controller
 {
@@ -78,31 +79,43 @@ class ReservationController extends Controller
             DB::beginTransaction();
 
             $data = $request->validate([
-                'from_location' => ['required', 'string'],
-                'to_location' => ['required', 'string'],
+                'from_location' => ['required', 'string', 'max:255'],
+                'to_location' => ['required', 'string', 'max:255'],
                 'start_time' => ['required', 'date'],
-                'end_time' => ['required', 'date', 'after:start_time'],
-                'client_name' => ['required', 'string'],
-                'client_phone' => ['required', 'string'],
-                'client_email' => ['required', 'string', 'email'],
+                'end_time' => ['nullable', 'date', 'after_or_equal:start_time'],
+                'ride_option' => ['required', Rule::in(['shared', 'entire_cabin'])], // Added ride_option validation
+                'client_name' => ['required', 'string', 'max:255'],
+                'client_phone' => ['required', 'string', 'max:20'],
+                'client_email' => ['required', 'email', 'max:255'],
                 'description' => ['nullable', 'string'],
-                'status' => ['nullable', Rule::in([Reservation::STATUS_PENDING, Reservation::STATUS_APPROVED, Reservation::STATUS_REJECTED])],
+                'status' => ['nullable', Rule::in(['pending', 'approved', 'rejected'])], // Used string values directly
             ]);
+
             // Convert datetime to MySQL format
-            $data['start_time'] = \Carbon\Carbon::parse($data['start_time'])->format('Y-m-d H:i:s');
-            $data['end_time'] = \Carbon\Carbon::parse($data['end_time'])->format('Y-m-d H:i:s');
-            $data['status'] = $data['status'] ?? Reservation::STATUS_PENDING; // Default to pending if not provided
+            $data['start_time'] = Carbon::parse($data['start_time'])->format('Y-m-d H:i:s');
+            $data['end_time'] = isset($data['end_time']) ? Carbon::parse($data['end_time'])->format('Y-m-d H:i:s') : null;
+            $data['status'] = $data['status'] ?? 'pending'; // Default to 'pending' if not provided
+
             $reservation = Reservation::create($data);
 
             DB::commit();
 
-            return response()->json(['message' => 'Reservation created successfully', 'data' => $reservation], 201);
+            return response()->json([
+                'message' => 'Reservation created successfully',
+                'data' => $reservation
+            ], 201);
         } catch (ValidationException $e) {
-            return response()->json(['message' => 'Validation failed', 'errors' => $e->errors()], 422);
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Reservation creation failed: ' . $e->getMessage());
-            return response()->json(['error' => 'An unexpected error occurred. Please try again.'], 500);
+
+            return response()->json([
+                'error' => 'An unexpected error occurred. Please try again.'
+            ], 500);
         }
     }
 
@@ -140,8 +153,8 @@ class ReservationController extends Controller
                 'status' => ['sometimes', 'nullable', Rule::in([Reservation::STATUS_PENDING, Reservation::STATUS_APPROVED, Reservation::STATUS_REJECTED])],
             ]);
             // Convert datetime to MySQL format
-            $data['start_time'] = \Carbon\Carbon::parse($data['start_time'])->format('Y-m-d H:i:s');
-            $data['end_time'] = \Carbon\Carbon::parse($data['end_time'])->format('Y-m-d H:i:s');
+            $data['start_time'] = Carbon::parse($data['start_time'])->format('Y-m-d H:i:s');
+            $data['end_time'] = Carbon::parse($data['end_time'])->format('Y-m-d H:i:s');
             $reservation->update($data);
 
             DB::commit();
