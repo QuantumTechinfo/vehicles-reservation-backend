@@ -6,167 +6,110 @@ use Illuminate\Http\UploadedFile;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log; // Import Log facade
-use Vehicle\Models\Media;
-use setasign\Fpdi\Fpdi;
+use Illuminate\Support\Facades\Log;
+
 trait HasMediaTrait
 {
-    public function saveMedia(UploadedFile $file, string $fieldName = 'image')
+    /**
+     * Save media file and return the stored path.
+     *
+     * @param UploadedFile $file
+     * @param string $type (e.g., 'blue_book', 'gallery')
+     * @return string
+     */
+    public function saveVehicleMedia(UploadedFile $file, string $type): string
     {
-        Log::info('Starting saveMedia process', ['field_name' => $fieldName]);
+        Log::info('Saving vehicle media', ['type' => $type]);
 
-        // Create a file name with no spaces
+        // Determine the base folder based on the model's table name and media type
+        $tableName = $this->getTable();
+        $baseFolder = "uploads/{$tableName}/{$type}/";
+
+        // Generate a unique file name
         $originalFileName = $file->getClientOriginalName();
         $fileName = time() . '_' . str_replace(' ', '_', $originalFileName);
-        $baseFolder = 'uploads/' . $this->getTable() . '/';
-        $originalFilePath = $baseFolder . 'original/' . $fileName;
-
-        // Get mime type and file size
-        $mimeType = $file->getMimeType();
-        $fileSize = $file->getSize();
-        Log::info('File details', ['mime_type' => $mimeType, 'file_size' => $fileSize]);
-
-        // Check if there's an existing media record
-        $existingMedia = $this->media()->where('field_name', $fieldName)->where('mediable_id', $this->id)->first();
-
-        if ($existingMedia) {
-            Log::info('Existing media found, deleting old files', ['media_id' => $existingMedia->id]);
-            $this->deleteExistingMediaFiles($existingMedia);
-            $existingMedia->delete();
-        }
 
         // Store the original file
-        Storage::disk('public')->put($originalFilePath, file_get_contents($file));
-        Log::info('Original file stored', ['path' => $originalFilePath]);
+        $filePath = $file->storeAs(
+            $baseFolder . 'original',
+            $fileName,
+            'public'
+        );
 
-        $metadata = [];
-
-        // Handle different file types
-        if ($this->isImage($mimeType)) {
-            Log::info('Processing image file');
-            // Create and store different sizes for images
-            $sizes = [
-                'thumbnail' => [150, 150],
-                'medium' => [300, 300],
-                'large' => [600, 600],
-            ];
-
-            $resizedPaths = [];
-            $manager = new ImageManager(new GdDriver());
-
-            foreach ($sizes as $size => $dimensions) {
-                $image = $manager->read($file);
-                $resizedImage = $image->cover($dimensions[0], $dimensions[1]);
-                $resizedFilePath = $baseFolder . $size . '/' . $fileName;
-                Storage::disk('public')->put($resizedFilePath, $resizedImage->toJpg()->toString());
-                $resizedPaths[$size] = $resizedFilePath;
-                Log::info('Image resized and stored', ['size' => $size, 'path' => $resizedFilePath]);
-            }
-
-            $metadata = [
-                'thumbnail_path' => $resizedPaths['thumbnail'],
-                'medium_path' => $resizedPaths['medium'],
-                'large_path' => $resizedPaths['large'],
-                'file_type' => 'image'
-            ];
-        } elseif ($this->isPDF($mimeType)) {
-            Log::info('Processing PDF file');
-            $metadata = [
-                'file_type' => 'pdf',
-                'original_name' => $originalFileName,
-                'page_count' => $this->getPDFPageCount($file->getPathname())
-            ];
-            Log::info('PDF metadata', $metadata);
-        } else {
-            Log::error('Unsupported file type', ['mime_type' => $mimeType]);
-            throw new \Exception('Unsupported file type. Only images and PDFs are allowed.');
+        // If the file is an image, process it to create resized versions
+        if ($this->isImage($file->getMimeType())) {
+            $this->processImage($file, $baseFolder, $fileName);
         }
 
-        // Create new media record
-        $media = $this->media()->create([
-            'file_name' => $fileName,
-            'file_path' => $originalFilePath,
-            'mime_type' => $mimeType,
-            'file_size' => $fileSize,
-            'field_name' => $fieldName,
-            'metadata' => json_encode($metadata),
-        ]);
-        Log::info('Media record created', ['media_id' => $media->id]);
-
-        return $media;
+        // Return the public URL of the stored file
+        return Storage::disk('public')->url($filePath);
     }
 
-    public function deleteExistingMediaFiles(Media $media)
+    /**
+     * Process an image file to create resized versions.
+     *
+     * @param UploadedFile $file
+     * @param string $baseFolder
+     * @param string $fileName
+     */
+    private function processImage(UploadedFile $file, string $baseFolder, string $fileName): void
     {
-        Log::info('Deleting existing media files', ['media_id' => $media->id]);
+        $sizes = [
+            'thumbnail' => [150, 150],
+            'medium' => [300, 300],
+            'large' => [600, 600],
+        ];
 
-        // Delete original file
-        Storage::disk('public')->delete($media->file_path);
+        $manager = new ImageManager(new GdDriver());
 
-        // Delete additional files based on file type
-        if ($media->metadata) {
-            $metadata = json_decode($media->metadata, true);
+        foreach ($sizes as $size => $dimensions) {
+            $image = $manager->read($file);
+            $resizedImage = $image->cover($dimensions[0], $dimensions[1]);
 
-            if (isset($metadata['file_type']) && $metadata['file_type'] === 'image') {
-                // Delete resized images
-                foreach (['thumbnail_path', 'medium_path', 'large_path'] as $path) {
-                    if (isset($metadata[$path])) {
-                        Storage::disk('public')->delete($metadata[$path]);
-                        Log::info('Deleted resized image', ['path' => $metadata[$path]]);
-                    }
-                }
-            }
+            // Save the resized image
+            $path = "{$baseFolder}{$size}/{$fileName}";
+            Storage::disk('public')->put($path, $resizedImage->toJpg()->toString());
         }
     }
 
-    public function deleteMedia(string $media_url)
-    {
-        $filename = basename($media_url);
-        Log::info('Deleting media by URL', ['media_url' => $media_url]);
-
-        // Find the media record
-        $media = Media::where('file_name', $filename)->first();
-
-        if (!$media) {
-            Log::warning("Media record not found for URL: $media_url");
-            return false;
-        }
-
-        // Delete the files
-        $this->deleteExistingMediaFiles($media);
-
-        // Delete the media record from the database
-        $media->delete();
-        Log::info('Media record deleted', ['media_id' => $media->id]);
-
-        return true;
-    }
-
-    public function media()
-    {
-        return $this->morphMany(Media::class, 'mediable');
-    }
-
+    /**
+     * Check if a file is an image based on its MIME type.
+     *
+     * @param string $mimeType
+     * @return bool
+     */
     private function isImage(string $mimeType): bool
     {
-        return strpos($mimeType, 'image/') === 0;
+        return str_starts_with($mimeType, 'image/');
     }
 
-    private function isPDF(string $mimeType): bool
+    /**
+     * Delete media files associated with a specific type.
+     *
+     * @param string $filePath
+     */
+    public function deleteVehicleMedia(string $filePath): void
     {
-        return $mimeType === 'application/pdf';
-    }
+        Log::info('Deleting vehicle media', ['file_path' => $filePath]);
 
-    private function getPDFPageCount(string $filePath): int
-    {
-        try {
-            $pdf = new Fpdi();
-            $pageCount = $pdf->setSourceFile($filePath);
-            Log::info('PDF page count retrieved', ['page_count' => $pageCount]);
-            return $pageCount;
-        } catch (\Exception $e) {
-            Log::warning("Could not get PDF page count: " . $e->getMessage());
-            return 0;
+        // Extract the relative path from the public URL
+        $relativePath = str_replace(Storage::disk('public')->url(''), '', $filePath);
+
+        // Delete the original file
+        Storage::disk('public')->delete($relativePath);
+
+        // If it's an image, delete resized versions
+        if ($this->isImage(Storage::disk('public')->mimeType($relativePath))) {
+            $baseFolder = dirname($relativePath);
+            $fileName = basename($relativePath);
+
+            $sizes = ['thumbnail', 'medium', 'large'];
+            foreach ($sizes as $size) {
+                $resizedPath = "{$baseFolder}/{$size}/{$fileName}";
+                if (Storage::disk('public')->exists($resizedPath)) {
+                    Storage::disk('public')->delete($resizedPath);
+                }
+            }
         }
     }
 }

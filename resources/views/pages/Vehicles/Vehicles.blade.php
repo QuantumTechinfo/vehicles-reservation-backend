@@ -208,7 +208,9 @@
                                                                 </button>
                                                             </div>
                                                             <div class="modal-body">
-                                                                {{ $vehicle->Images }}
+                                                            
+                                                                <img src="{{ asset('storage/' . $vehicle->blue_book) }}" alt="">
+
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-secondary"
@@ -243,7 +245,12 @@
                                                             </div>
                                                             <div class="modal-body">
                                                                 <!-- Assuming this is where you want to show additional images -->
-                                                                {{ $vehicle->drivers }}
+                                                                <!-- {{ $vehicle->drivers }} -->
+                                                                @foreach (json_decode($vehicle->vehicle_images) as $images)
+                                                                    <img src="{{ asset('storage/' . $images) }}" alt="">
+
+                                                                @endforeach
+                                                                
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-secondary"

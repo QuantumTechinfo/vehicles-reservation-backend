@@ -21,13 +21,13 @@ return new class extends Migration {
             $table->text('vehicle_description')->nullable();
 
             // Blue book image path
-            $table->string('blue_book')->nullable();
+            $table->string('blue_book');
 
             // JSON field to store driver details: e.g. [{ "contact_number": "...", "name": "...", "license_no": "..." }, ...]
             $table->json('drivers')->nullable();
 
             // JSON field to store multiple vehicle images (paths)
-            $table->json('vehicle_images')->nullable();
+            $table->json('vehicle_images');
 
             $table->timestamps();
         });

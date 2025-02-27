@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Gate;
 
 class VehicleController extends Controller
 {
-    use HasMediaTrait;
+    // use HasMediaTrait;
 
     /**
      * List all vehicles.
@@ -37,7 +37,7 @@ class VehicleController extends Controller
         $user = $request->user();
         $token = $request->header('Authorization');
 
-        // Log whether the token and user are present.
+        // Log authentication status
         if ($user) {
             \Log::info('Authenticated user detected', [
                 'uploader_id' => $user->id,
@@ -47,48 +47,42 @@ class VehicleController extends Controller
             \Log::warning('No authenticated user found. Token received:', ['token' => $token]);
         }
 
-
         try {
             DB::beginTransaction();
 
+            // Validation (ensure required fields are present)
             $data = $request->validate([
                 'vehicle_name' => ['required', 'string'],
                 'vehicle_number' => ['required', 'string', 'unique:vehicles,vehicle_number'],
                 'vehicle_description' => ['nullable', 'string'],
-                'blue_book_photo' => 'nullable|image|max:2048',
+                'blue_book_photo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Compulsory
                 'drivers' => 'required|array',
                 'drivers.*.name' => 'required|string',
                 'drivers.*.contact_number' => 'required|string',
                 'drivers.*.license_no' => 'required|string',
-                'vehicle_images.*' => 'nullable|image|max:2048',
+                'vehicle_images' => 'required|array', // Compulsory
+                'vehicle_images.*' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
 
-            // Create vehicle record with uploader's id from authenticated user.
+            // 1. Process blue_book FIRST
+            $blueBookPath = $this->saveMedia($request->file('blue_book_photo'), 'blue_book');
+
+            // 2. Process vehicle_images
+            $vehicleImages = [];
+            foreach ($request->file('vehicle_images') as $image) {
+                $vehicleImages[] = $this->saveMedia($image, 'vehicle_images');
+            }
+
+            // 3. Create vehicle record WITH ALL COMPULSORY FIELDS
             $vehicle = Vehicle::create([
-                'uploader_id' => $user->id, // vehicle owner
+                'uploader_id' => $user->id,
                 'vehicle_name' => $data['vehicle_name'],
                 'vehicle_number' => $data['vehicle_number'],
                 'vehicle_description' => $data['vehicle_description'] ?? null,
+                'blue_book' => $blueBookPath, // Now included in initial create
+                'vehicle_images' => json_encode($vehicleImages), // Now included in initial create
+                'drivers' => json_encode($data['drivers']), // Include drivers here too
             ]);
-
-            // Handle blue book photo upload.
-            if ($request->hasFile('blue_book_photo')) {
-                $blueBookPath = $this->saveMedia($request->file('blue_book_photo'), 'blue_book');
-                $vehicle->update(['blue_book' => $blueBookPath]);
-            }
-
-            // Save driver details as JSON.
-            $vehicle->update(['drivers' => json_encode($data['drivers'])]);
-
-            // Handle multiple vehicle images upload.
-            if ($request->hasFile('vehicle_images')) {
-                $images = [];
-                foreach ($request->file('vehicle_images') as $image) {
-                    $imagePath = $this->saveMedia($image, 'vehicle_images');
-                    $images[] = $imagePath;
-                }
-                $vehicle->update(['vehicle_images' => json_encode($images)]);
-            }
 
             DB::commit();
 
@@ -104,13 +98,17 @@ class VehicleController extends Controller
             ], 422);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Vehicle creation failed: ' . $e->getMessage());
+            Log::error('Vehicle creation failed: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all(),
+                'user' => $user ? $user->id : null,
+            ]);
             return response()->json([
-                'error' => $e->getMessage()
+                'error' => 'An error occurred while creating the vehicle.',
+                'details' => $e->getMessage()
             ], 500);
         }
     }
-
 
     /**
      * Display a specific vehicle.
@@ -247,5 +245,11 @@ class VehicleController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    private function saveMedia($file, $directory)
+    {
+        $path = $file->store($directory, 'public');
+        return $path;
     }
 }
